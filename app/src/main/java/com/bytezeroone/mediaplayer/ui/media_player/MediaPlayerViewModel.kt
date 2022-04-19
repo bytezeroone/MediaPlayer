@@ -13,7 +13,6 @@ import androidx.lifecycle.viewModelScope
 import com.bytezeroone.mediaplayer.R
 import com.bytezeroone.mediaplayer.util.UiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
@@ -34,7 +33,7 @@ class MediaPlayerViewModel
         R.raw.audio1,
         R.raw.audio2
     )
-    private var songIndex = 0
+    var songIndex = 0
 
     var valueRange by mutableStateOf(2000f..10000f)
 
@@ -46,8 +45,6 @@ class MediaPlayerViewModel
     var songFinish by mutableStateOf(false)
         private set
 
-    val job1 = viewModelScope
-    val job2 = viewModelScope
 
     var audioFlag by mutableStateOf(true)
         private set
@@ -61,31 +58,26 @@ class MediaPlayerViewModel
 
                 override fun onFinish() {
                     songFinish = true
-                    when (songFinish) {
+                    //audioFlag = true
+                    /*when (songFinish) {
                         true -> {
                             audioFlag = true
                         }
                         else -> Unit
-                    }
-                    when (songIndex) {
+                    }*/
+                    /*when (songIndex) {
                         0 -> {
-                            job1.launch {
                                 song2Choose(songList[1], color = buttonColor2.value)
                                 songStart()
                                 buttonColor2
-                                job2.cancel()
-                            }
                         }
                         1 -> {
-                            job2.launch {
                                 song1Choose(songList[0], color = buttonColor1.value)
                                 songStart()
                                 buttonColor2
                                 songIndex = 1
-                                job1.cancel()
-                            }
                         }
-                    }
+                    }*/
                 }
 
             }
@@ -107,117 +99,133 @@ class MediaPlayerViewModel
                             )
                         )
                     }
+                    else -> Unit
+                }
+                when (mediaPlayer!!.isPlaying) {
+                    true -> {
+                        songPause()
+                    }
                     else -> {
-                        when (mediaPlayer!!.isPlaying) {
-                            true -> {
-                                songPause()
-                                job1.cancel()
-                                job2.cancel()
-                            }
-                            else -> {
-                                songStart()
-                                getMediaDuration()
-                            }
-                        }
+                        songStart()
+                        //getMediaDuration()
                     }
                 }
 
-            }
-            is MediaPlayerEvent.OnSong1Click -> {
-                    song1Choose(
-                        songList[songIndex],
-                        color = buttonColor1.value
-                    )
-            }
-            MediaPlayerEvent.OnSong2Click -> {
-                song2Choose(
-                    songList[songIndex],
-                    color = buttonColor2.value
-                )
-            }
-            is MediaPlayerEvent.OnPauseButtonClick -> {
-                //songPause()
-            }
-            else -> Unit
         }
+        is MediaPlayerEvent.OnSong1Click -> {
+            songStop()
+            song1Choose(
+                songList[0],
+                color = buttonColor1.value
+            )
+        }
+        MediaPlayerEvent.OnSong2Click -> {
+            songStop()
+            song2Choose(
+                songList[1],
+                color = buttonColor2.value
+            )
+        }
+        is MediaPlayerEvent.OnPauseButtonClick -> {
+            //songPause()
+        }
+        else -> Unit
     }
+}
 
-    var audioFinish = mutableStateOf(false)
-        private set
+var audioFinish = mutableStateOf(false)
+    private set
 
-    var buttonColorDefault = mutableStateOf(Color.Gray)
-        private set
+var buttonColorDefault = mutableStateOf(Color.Gray)
+    private set
 
-    var buttonColor1 = mutableStateOf(Color.Yellow)
-        private set
+var buttonColor1 = mutableStateOf(Color.Yellow)
+    private set
 
-    var buttonColor2 = mutableStateOf(Color.Green)
-        private set
+var buttonColor2 = mutableStateOf(Color.Green)
+    private set
 
-    private fun song1Choose(id: Int, color: Color) {
-        if (mediaPlayer != null) {
-            mediaPlayer?.pause()
-        }
-        songIndex = 0
-        mediaPlayer = MediaPlayer.create(application.applicationContext, id)
-        audioFlag = true
-        when (buttonColor1.value) {
-            Color.Gray -> {
-                buttonColor1.value = color
-                buttonColor2.value = Color.Gray
-            }
-            Color.Yellow -> Unit
-        }
-        Log.d("asdsad", "${buttonColor1.value}")
-    }
-
-    private fun song2Choose(id: Int, color: Color) {
-        if (mediaPlayer != null) {
-            mediaPlayer?.pause()
-        }
-        songIndex = 1
-        mediaPlayer = MediaPlayer.create(application.applicationContext, id)
-        audioFlag = true
-        when (buttonColor2.value) {
-            Color.Gray -> {
-                buttonColor2.value = color
-                buttonColor1.value = Color.Gray
-            }
-            Color.Yellow -> Unit
-        }
-        Log.d("asdsad", "${buttonColor2.value}")
-    }
-
-    private fun songStart() {
+private fun song1Choose(id: Int, color: Color) {
+    try {
         if (mediaPlayer!!.isPlaying) {
             mediaPlayer?.stop()
-            mediaPlayer?.prepare()
+        }
+    } catch (e: NullPointerException) {
+        e.printStackTrace()
+    }
+    mediaPlayer = MediaPlayer.create(application.applicationContext, id)
+    audioFlag = true
+    when (buttonColor1.value) {
+        Color.Gray -> {
+            buttonColor1.value = color
+            buttonColor2.value = Color.Gray
+        }
+        Color.Yellow -> Unit
+    }
+    Log.d("asdsad", "$songIndex")
+}
+
+private fun song2Choose(id: Int, color: Color) {
+    try {
+        if (mediaPlayer!!.isPlaying) {
+            mediaPlayer?.stop()
+        }
+    } catch (e: NullPointerException) {
+        e.printStackTrace()
+    }
+    mediaPlayer = MediaPlayer.create(application.applicationContext, id)
+    songIndex = 1
+    audioFlag = true
+    when (buttonColor2.value) {
+        Color.Gray -> {
+            buttonColor2.value = color
+            buttonColor1.value = Color.Gray
+        }
+        Color.Yellow -> Unit
+    }
+    Log.d("asdsad", "$songIndex")
+}
+
+private fun songStart() {
+    if (mediaPlayer!!.isPlaying) {
+        audioFlag = true
+    }
+    try {
+        mediaPlayer!!.start()
+        audioFlag = false
+    } catch (e: NullPointerException) {
+        e.printStackTrace()
+    }
+    getMediaDuration()
+}
+
+
+private fun songPause() {
+    try {
+        if (mediaPlayer!!.isPlaying) {
+            mediaPlayer?.pause()
             audioFlag = true
         }
-        try {
-            mediaPlayer!!.start()
-            audioFlag = false
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        getMediaDuration()
+    } catch (e: NullPointerException) {
+        e.printStackTrace()
     }
+}
 
+private fun songStop() {
+    try {
+        if (mediaPlayer!!.isPlaying) {
+            mediaPlayer?.stop()
+            audioFlag = true
 
-    private fun songPause() {
-        try {
-            if (mediaPlayer!!.isPlaying) {
-                mediaPlayer?.pause()
-                audioFlag = true
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
+    } catch (e: NullPointerException) {
+        e.printStackTrace()
     }
+}
 
-    private fun sendUiEvent(event: UiEvent) {
-        viewModelScope.launch {
-            _uiEvent.send(event)
-        }
+private fun sendUiEvent(event: UiEvent) {
+    viewModelScope.launch {
+        _uiEvent.send(event)
     }
+}
 }

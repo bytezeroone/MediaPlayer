@@ -35,7 +35,7 @@ fun MediaPlayerScreen(
 
     val scaffoldState = rememberScaffoldState()
     LaunchedEffect(key1 = true) {
-        viewModel.uiEvent.collect() { event ->
+        viewModel.uiEvent.collect { event ->
             when (event) {
                 is UiEvent.ShowSnackBar -> {
                     val result = scaffoldState.snackbarHostState.showSnackbar(
