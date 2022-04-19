@@ -49,6 +49,19 @@ class MediaPlayerViewModel
     var audioFlag by mutableStateOf(true)
         private set
 
+
+    var audioFinish = mutableStateOf(false)
+        private set
+
+    var buttonColorDefault = mutableStateOf(Color.Gray)
+        private set
+
+    var buttonColor1 = mutableStateOf(Color.Yellow)
+        private set
+
+    var buttonColor2 = mutableStateOf(Color.Green)
+        private set
+
     fun getMediaDuration() {
         try {
             currentDuration = object : CountDownTimer(mediaPlayer!!.duration.toLong(), 500) {
@@ -111,121 +124,109 @@ class MediaPlayerViewModel
                     }
                 }
 
+            }
+            is MediaPlayerEvent.OnSong1Click -> {
+                songStop()
+                song1Choose(
+                    songList[0],
+                    color = buttonColor1.value
+                )
+            }
+            MediaPlayerEvent.OnSong2Click -> {
+                songStop()
+                song2Choose(
+                    songList[1],
+                    color = buttonColor2.value
+                )
+            }
+            is MediaPlayerEvent.OnPauseButtonClick -> {
+                //songPause()
+            }
+            else -> Unit
         }
-        is MediaPlayerEvent.OnSong1Click -> {
-            songStop()
-            song1Choose(
-                songList[0],
-                color = buttonColor1.value
-            )
-        }
-        MediaPlayerEvent.OnSong2Click -> {
-            songStop()
-            song2Choose(
-                songList[1],
-                color = buttonColor2.value
-            )
-        }
-        is MediaPlayerEvent.OnPauseButtonClick -> {
-            //songPause()
-        }
-        else -> Unit
     }
-}
 
-var audioFinish = mutableStateOf(false)
-    private set
-
-var buttonColorDefault = mutableStateOf(Color.Gray)
-    private set
-
-var buttonColor1 = mutableStateOf(Color.Yellow)
-    private set
-
-var buttonColor2 = mutableStateOf(Color.Green)
-    private set
-
-private fun song1Choose(id: Int, color: Color) {
-    try {
-        if (mediaPlayer!!.isPlaying) {
-            mediaPlayer?.stop()
+    private fun song1Choose(id: Int, color: Color) {
+        try {
+            if (mediaPlayer!!.isPlaying) {
+                mediaPlayer?.stop()
+            }
+        } catch (e: NullPointerException) {
+            e.printStackTrace()
         }
-    } catch (e: NullPointerException) {
-        e.printStackTrace()
-    }
-    mediaPlayer = MediaPlayer.create(application.applicationContext, id)
-    audioFlag = true
-    when (buttonColor1.value) {
-        Color.Gray -> {
-            buttonColor1.value = color
-            buttonColor2.value = Color.Gray
-        }
-        Color.Yellow -> Unit
-    }
-    Log.d("asdsad", "$songIndex")
-}
-
-private fun song2Choose(id: Int, color: Color) {
-    try {
-        if (mediaPlayer!!.isPlaying) {
-            mediaPlayer?.stop()
-        }
-    } catch (e: NullPointerException) {
-        e.printStackTrace()
-    }
-    mediaPlayer = MediaPlayer.create(application.applicationContext, id)
-    songIndex = 1
-    audioFlag = true
-    when (buttonColor2.value) {
-        Color.Gray -> {
-            buttonColor2.value = color
-            buttonColor1.value = Color.Gray
-        }
-        Color.Yellow -> Unit
-    }
-    Log.d("asdsad", "$songIndex")
-}
-
-private fun songStart() {
-    if (mediaPlayer!!.isPlaying) {
+        mediaPlayer = MediaPlayer.create(application.applicationContext, id)
         audioFlag = true
+        when (buttonColor1.value) {
+            Color.Gray -> {
+                buttonColor1.value = color
+                buttonColor2.value = Color.Gray
+            }
+            Color.Yellow -> Unit
+        }
+        Log.d("asdsad", "$songIndex")
     }
-    try {
-        mediaPlayer!!.start()
-        audioFlag = false
-    } catch (e: NullPointerException) {
-        e.printStackTrace()
+
+    private fun song2Choose(id: Int, color: Color) {
+        try {
+            if (mediaPlayer!!.isPlaying) {
+                mediaPlayer?.stop()
+            }
+        } catch (e: NullPointerException) {
+            e.printStackTrace()
+        }
+        mediaPlayer = MediaPlayer.create(application.applicationContext, id)
+        songIndex = 1
+        audioFlag = true
+        when (buttonColor2.value) {
+            Color.Gray -> {
+                buttonColor2.value = color
+                buttonColor1.value = Color.Gray
+            }
+            Color.Yellow -> Unit
+        }
+        Log.d("asdsad", "$songIndex")
     }
-    getMediaDuration()
-}
 
-
-private fun songPause() {
-    try {
+    private fun songStart() {
         if (mediaPlayer!!.isPlaying) {
-            mediaPlayer?.pause()
             audioFlag = true
         }
-    } catch (e: NullPointerException) {
-        e.printStackTrace()
-    }
-}
-
-private fun songStop() {
-    try {
-        if (mediaPlayer!!.isPlaying) {
-            mediaPlayer?.stop()
-            audioFlag = true
-
+        try {
+            mediaPlayer!!.start()
+            audioFlag = false
+        } catch (e: NullPointerException) {
+            e.printStackTrace()
         }
-    } catch (e: NullPointerException) {
-        e.printStackTrace()
+        getMediaDuration()
     }
-}
 
-private fun sendUiEvent(event: UiEvent) {
-    viewModelScope.launch {
-        _uiEvent.send(event)
+
+    private fun songPause() {
+        try {
+            if (mediaPlayer!!.isPlaying) {
+                mediaPlayer?.pause()
+                audioFlag = true
+            }
+        } catch (e: NullPointerException) {
+            e.printStackTrace()
+        }
     }
-}
+
+    private fun songStop() {
+        try {
+            if (mediaPlayer!!.isPlaying) {
+                mediaPlayer?.stop()
+                audioFlag = true
+
+            }
+        } catch (e: NullPointerException) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun sendUiEvent(event: UiEvent) {
+        viewModelScope.launch {
+            _uiEvent.send(event)
+        }
+    }
 }
